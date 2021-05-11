@@ -7,6 +7,10 @@
 	flex-direction: column;
 }
 
+table {
+	font-family: "Permanent Marker", cursive;
+}
+
 main {
 	flex: 1 1 auto;
 
@@ -51,6 +55,11 @@ td {
 
 .form-check-input:focus {
 	border: 0;
+}
+
+.GitHub-Mark {
+	height: 32px;
+	width: 32px;
 }
 
 @media only screen and (max-width: 600px) {

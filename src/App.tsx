@@ -1,30 +1,84 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
-import githubLogo from "./GitHub-Mark-Light-32px.png";
+import Board from "./Board";
+import githubLogo from "./GitHub-Mark-Light-120px-plus.png";
+import {
+	BoardType,
+	EMPTY,
+	EMPTYBOARD,
+	optimalAIMove,
+	O,
+	Player,
+	utility,
+	X,
+} from "./helper";
 
-// https://www.typescriptlang.org/play?#code/C4TwDgpgBAKgrmANhAPDANFAclCAPYCAOwBMBnKIuAWwCMIAnAPigF5tcDjyOB+SmvQadCpCjn4wA2gF0oALigB9eEggB5AGZpMWTLJaKiEAG6MA3AChQkZauRadHfKJ5U6jTACUR3CnCIAayIAewB3IgM2KC8pAHJkIgBzYAALOLkXPz4YhTsEB20MbH1igDoKrxkmK2twaHsIAE40FnZGpyaautsAIRCAQwYSJrwWgAU22ALmtBmJpm7LEggAY0Qh6FWQojJgKFpB4cV+oZGxlHchJcOzqQB2GQe5AHoXqHUAaUtLW+GpACMAKejygbygqQGFFCuGQ1GI+wG+wAlqR8FA4kC4r8jiRnoDgWD3pDoSFYRB4URESi0XgMVigA
-type Tuple<T, N extends number> = N extends N
-	? number extends N
-		? T[]
-		: _TupleOf<T, N, []>
-	: never;
-type _TupleOf<T, N extends number, R extends unknown[]> = R["length"] extends N
-	? R
-	: _TupleOf<T, N, [T, ...R]>;
+const messages = {
+	xwon: "X won !",
+	owon: "O won !",
+	move: "Make a Move ...",
+	aiturn: "Computer thinking ...",
+	draw: "Draw !",
+};
 
 function App() {
-	// prettier-ignore
-	const [board, setboard] = useState<Tuple<string, 9>>([
-		"X",  "X",  "O",
-		" ",  "O",  " ",
-		" ",  "X",  " ",
-	]);
+	const [board, setBoard] = useState<BoardType>([...EMPTYBOARD]);
+	const [boardValue, setBoardValue] = useState<number | undefined>();
+	const [player, setPlayer] = useState<Player>(X); // user is playing as ...
+	const [msg, setMsg] = useState<string>(messages.move);
+
+	const [aiMove, setAIMove] = useState(false);
+
+	useEffect(() => {
+		setBoardValue(utility(board));
+	}, [board]);
+
+	useEffect(() => {
+		if (boardValue === 1) {
+			setMsg(messages.xwon);
+		} else if (boardValue === -1) {
+			setMsg(messages.owon);
+		} else if (boardValue === 0) {
+			setMsg(messages.draw);
+		} else {
+			if (aiMove) {
+				setMsg(messages.aiturn);
+			} else {
+				setMsg(messages.move);
+			}
+		}
+	}, [aiMove, boardValue]);
+
+	useEffect(() => {
+		setBoard([...EMPTYBOARD]);
+		setAIMove(player === O);
+	}, [player]);
+
+	useEffect(() => {
+		if (aiMove) {
+			if (boardValue === undefined) {
+				let cell = optimalAIMove([...board]);
+				board[cell] = player === X ? O : X;
+				setBoard([...board]);
+				setAIMove(false);
+			}
+		}
+	}, [aiMove, board, player, boardValue]);
+
+	const makeUserMove = (cell: number) => {
+		if (board[cell] === EMPTY && boardValue === undefined) {
+			board[cell] = player;
+			setBoard([...board]);
+			setAIMove(true);
+		}
+	};
 
 	return (
 		<div className="App text-white">
 			<header className="flex-center p-3">
 				<h1 className="f">Tic Tac Toe</h1>
 			</header>
+
 			<main>
 				<div className="flex-between p-3">
 					<span className="d-flex fs-5">
@@ -34,32 +88,25 @@ function App() {
 							<input
 								className="form-check-input mx-3 p-0 m-0"
 								type="checkbox"
+								checked={player === O}
+								onChange={() => setPlayer(player === X ? O : X)}
 							/>
 							O
 						</span>
 					</span>
-					<button className="btn btn-danger">Reset</button>
+					<button
+						className="btn btn-danger"
+						onClick={() => {
+							setBoard([...EMPTYBOARD]);
+							setAIMove(player === O);
+						}}
+					>
+						Reset
+					</button>
 				</div>
-				<p className="flex-center m-3 fs-5">Computer Thinking ...</p>
-				<div className="flex-center flex-fill">
-					<table>
-						<tr>
-							<td>{board[0]}</td>
-							<td className="horizontal">{board[1]}</td>
-							<td>{board[2]}</td>
-						</tr>
-						<tr>
-							<td className="vertical">{board[3]}</td>
-							<td className="vertical horizontal">{board[4]}</td>
-							<td className="vertical">{board[5]}</td>
-						</tr>
-						<tr>
-							<td>{board[6]}</td>
-							<td className="horizontal">{board[7]}</td>
-							<td>{board[8]}</td>
-						</tr>
-					</table>
-				</div>
+				<p className="flex-center m-3 fs-5">{msg}</p>
+
+				<Board board={board} makeUserMove={makeUserMove} />
 			</main>
 			<footer>
 				<div className="flex-center p-3 m-3">
@@ -68,7 +115,7 @@ function App() {
 						target="_blank"
 						rel="noreferrer"
 					>
-						<img src={githubLogo} alt="Github Link" />
+						<img className="GitHub-Mark" src={githubLogo} alt="Github Link" />
 					</a>
 				</div>
 			</footer>
